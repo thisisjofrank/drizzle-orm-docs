@@ -31,6 +31,7 @@
   ["d1-existing", "SQLite"],
   ["do-new", "SQLite"],
   ["do-existing", "SQLite"],
+  ["deno-new", "SQLite"],
   ["bun-sqlite-new", "SQLite"],
   ["bun-sqlite-existing", "SQLite"],
   ["bun-sql-new", "PostgreSQL"],

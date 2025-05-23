@@ -1,0 +1,139 @@
+import Npm from "@mdx/Npm.astro";
+import Callout from '@mdx/Callout.astro';
+import AnchorCards from '@mdx/AnchorCards.astro';
+import Steps from '@mdx/Steps.astro';
+import WhatsNextPostgres from "@mdx/WhatsNextPostgres.astro";
+import Prerequisites from "@mdx/Prerequisites.astro";
+import CodeTabs from "@mdx/CodeTabs.astro";
+import Section from "@mdx/Section.astro";
+
+# Drizzle \<\> Deno SQLite
+
+<Prerequisites>
+- Database [connection basics](/docs/connect-overview) with Drizzle
+- Deno - [website](https://deno.land/)
+- Deno SQLite module - [deno_sqlite](https://deno.land/x/sqlite)
+</Prerequisites>
+
+Drizzle ORM supports working with SQLite in Deno projects through the `sqlite-proxy` adapter, which works with Deno's native SQLite APIs.
+
+#### Step 1 - Setup your imports
+
+You'll need to create an import map (`import_map.json` or in `deno.json`) to properly import Drizzle:
+
+```json copy
+{
+  "imports": {
+    "drizzle-orm": "npm:drizzle-orm",
+    "drizzle-orm/": "npm:drizzle-orm/"
+  }
+}
+```
+
+#### Step 2 - Connect to SQLite
+
+```typescript copy
+import { drizzle } from "drizzle-orm/sqlite-proxy";
+import { DB } from "https://deno.land/x/sqlite@v3.7.0/mod.ts";
+
+// Connect to SQLite database
+const sqlite = new DB("sqlite.db");
+const db = drizzle(sqlite);
+
+// Now you can use Drizzle to query your database
+const result = await db.select().from(yourTable);
+```
+
+#### Step 3 - Define your schema
+
+```typescript copy
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique()
+});
+```
+
+#### Step 4 - Run migrations
+
+For SQLite migrations in Deno, you can use the built-in migrator:
+
+```typescript copy
+import { migrate } from "drizzle-orm/sqlite-proxy/migrator";
+import { drizzle } from "drizzle-orm/sqlite-proxy";
+import { DB } from "https://deno.land/x/sqlite@v3.7.0/mod.ts";
+
+// Connect to SQLite database
+const sqlite = new DB("sqlite.db");
+const db = drizzle(sqlite);
+
+// Apply migrations
+console.log("Running migrations...");
+await migrate(db, { migrationsFolder: "./drizzle" });
+console.log("Migrations completed!");
+```
+
+Run this script with:
+
+```bash
+deno run --allow-read --allow-write migrations.ts
+```
+
+#### Step 5 - Generate migrations
+
+You can generate migrations using Drizzle Kit:
+
+```bash
+deno run -A npm:drizzle-kit generate
+```
+
+<Callout type="info">
+SQLite in Deno is perfect for:
+- Local development
+- Small to medium applications
+- Embedded databases
+- Projects where you need simplicity
+</Callout>
+
+#### Full example
+
+```typescript copy
+import { drizzle } from "drizzle-orm/sqlite-proxy";
+import { migrate } from "drizzle-orm/sqlite-proxy/migrator";
+import { DB } from "https://deno.land/x/sqlite@v3.7.0/mod.ts";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+
+// Define schema
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique()
+});
+
+async function main() {
+  // Connect to SQLite database
+  const sqlite = new DB("sqlite.db");
+  const db = drizzle(sqlite);
+  
+  // Apply migrations (if needed)
+  await migrate(db, { migrationsFolder: "./drizzle" });
+  
+  // Insert a user
+  await db.insert(users).values({
+    name: "John Doe",
+    email: "john@example.com"
+  });
+  
+  // Query users
+  const allUsers = await db.select().from(users);
+  console.log(allUsers);
+}
+
+main().catch(console.error);
+```
+
+#### What's next?
+
+<WhatsNextPostgres/>

@@ -1,0 +1,185 @@
+import Npm from "@mdx/Npm.astro";
+import Callout from '@mdx/Callout.astro';
+import AnchorCards from '@mdx/AnchorCards.astro';
+import Steps from '@mdx/Steps.astro';
+import WhatsNextPostgres from "@mdx/WhatsNextPostgres.astro";
+import Prerequisites from "@mdx/Prerequisites.astro";
+import CodeTabs from "@mdx/CodeTabs.astro";
+import Section from "@mdx/Section.astro";
+
+# Drizzle \<\> Deno PostgreSQL
+
+<Prerequisites>
+- Database [connection basics](/docs/connect-overview) with Drizzle
+- Deno - [website](https://deno.land/)
+- PostgreSQL database
+</Prerequisites>
+
+Drizzle ORM works with PostgreSQL in Deno through adapters for standard PostgreSQL clients.
+
+#### Step 1 - Setup your imports
+
+You'll need to create an import map (`import_map.json` or in `deno.json`) to properly import Drizzle:
+
+```json copy
+{
+  "imports": {
+    "drizzle-orm": "npm:drizzle-orm",
+    "drizzle-orm/": "npm:drizzle-orm/",
+    "postgres": "https://deno.land/x/postgres@v0.17.0/mod.ts"
+  }
+}
+```
+
+#### Step 2 - Connect to PostgreSQL
+
+<CodeTabs items={["Using postgres", "Using postgres-js"]}>
+```typescript copy
+import { drizzle } from "drizzle-orm/postgres-js";
+import { Client } from "postgres";
+
+// Create a PostgreSQL client
+const client = new Client({
+  user: "postgres",
+  password: "password",
+  database: "test",
+  hostname: "localhost",
+  port: 5432,
+});
+await client.connect();
+
+// Initialize Drizzle with the client
+const db = drizzle(client);
+
+// Now you can use Drizzle to query your database
+const result = await db.select().from(yourTable);
+```
+
+```typescript copy
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "https://deno.land/x/postgresjs@v3.3.5/mod.js";
+
+// Create a PostgreSQL client
+const connectionString = "postgres://user:password@localhost:5432/database";
+const client = postgres(connectionString);
+
+// Initialize Drizzle with the client
+const db = drizzle(client);
+
+// Now you can use Drizzle to query your database
+const result = await db.select().from(yourTable);
+```
+</CodeTabs>
+
+#### Step 3 - Define your schema
+
+```typescript copy
+import { pgTable, serial, text, varchar } from "drizzle-orm/pg-core";
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique()
+});
+```
+
+#### Step 4 - Run migrations
+
+For PostgreSQL migrations in Deno:
+
+```typescript copy
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import postgres from "https://deno.land/x/postgresjs@v3.3.5/mod.js";
+
+// Connection string with credentials
+const connectionString = "postgres://user:password@localhost:5432/database";
+const client = postgres(connectionString);
+const db = drizzle(client);
+
+// Apply migrations
+console.log("Running migrations...");
+await migrate(db, { migrationsFolder: "./drizzle" });
+console.log("Migrations completed!");
+```
+
+Run this script with:
+
+```bash
+deno run --allow-net --allow-read migrations.ts
+```
+
+#### Step 5 - Generate migrations
+
+You can generate migrations using Drizzle Kit:
+
+```bash
+deno run -A npm:drizzle-kit generate
+```
+
+<Callout type="info">
+When configuring your drizzle.config.ts for Deno, make sure to specify the database dialect and connection details:
+
+```typescript
+import { defineConfig } from "drizzle-kit";
+
+export default defineConfig({
+  schema: "./schema.ts",
+  out: "./drizzle",
+  dialect: "postgresql",
+  dbCredentials: {
+    url: Deno.env.get("DATABASE_URL") || "postgres://user:password@localhost:5432/database",
+  },
+});
+```
+</Callout>
+
+#### Full example
+
+```typescript copy
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "https://deno.land/x/postgresjs@v3.3.5/mod.js";
+import { pgTable, serial, text, varchar } from "drizzle-orm/pg-core";
+
+// Define schema
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique()
+});
+
+async function main() {
+  // Connection string with credentials
+  const connectionString = "postgres://user:password@localhost:5432/database";
+  const client = postgres(connectionString);
+  const db = drizzle(client);
+  
+  // Insert a user
+  await db.insert(users).values({
+    name: "John Doe",
+    email: "john@example.com"
+  });
+  
+  // Query users
+  const allUsers = await db.select().from(users);
+  console.log(allUsers);
+}
+
+main().catch(console.error);
+```
+
+#### Environment variables in Deno
+
+To use environment variables with Deno, you can:
+
+```typescript
+// Load environment variables from .env file
+import "https://deno.land/std@0.220.1/dotenv/load.ts";
+
+// Access environment variables
+const connectionString = Deno.env.get("DATABASE_URL");
+```
+
+#### What's next?
+
+<WhatsNextPostgres/>

@@ -1,0 +1,112 @@
+import Npm from "@mdx/Npm.astro";
+import Callout from '@mdx/Callout.astro';
+import AnchorCards from '@mdx/AnchorCards.astro';
+import Steps from '@mdx/Steps.astro';
+import WhatsNextPostgres from "@mdx/WhatsNextPostgres.astro";
+import Prerequisites from "@mdx/Prerequisites.astro";
+import CodeTabs from "@mdx/CodeTabs.astro";
+import Section from "@mdx/Section.astro";
+
+# Drizzle \<\> Deno
+
+<Prerequisites>
+- Database [connection basics](/docs/connect-overview) with Drizzle
+- Deno - [website](https://deno.land/)
+</Prerequisites>
+
+According to the **[official website](https://deno.land/)**, Deno is a modern runtime for JavaScript and TypeScript that provides a secure environment and a comprehensive standard library.
+
+Drizzle ORM works with Deno through standard database drivers and adapters. Here's how you can use it:
+
+#### Step 1 - Create import map
+
+Create an `import_map.json` file or add to your `deno.json` configuration:
+
+```json copy
+{
+  "imports": {
+    "drizzle-orm": "npm:drizzle-orm",
+    "drizzle-orm/": "npm:drizzle-orm/",
+    "drizzle-kit": "npm:drizzle-kit"
+  }
+}
+```
+
+#### Step 2 - Connect to your database
+
+<CodeTabs items={["SQLite", "PostgreSQL"]}>
+```ts copy
+import { drizzle } from "drizzle-orm/sqlite-proxy";
+import { DB } from "https://deno.land/x/sqlite@v3.7.0/mod.ts";
+
+// Connect to SQLite database
+const sqlite = new DB("sqlite.db");
+const db = drizzle(sqlite);
+
+// Now you can use db to query your database
+const result = await db.select().from(...);
+```
+
+```ts copy
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "https://deno.land/x/postgres@v0.17.0/mod.ts";
+
+// Connect to PostgreSQL database
+const client = new postgres.Client({
+  user: "postgres",
+  password: "password",
+  database: "database",
+  hostname: "localhost",
+  port: 5432
+});
+await client.connect();
+
+const db = drizzle(client);
+
+// Now you can use db to query your database
+const result = await db.select().from(...);
+```
+</CodeTabs>
+
+#### Step 3 - Working with migrations
+
+For migrations with Deno, you can either run Drizzle Kit or apply migrations programmatically:
+
+<Section>
+```ts copy filename="apply-migrations.ts"
+import { migrate } from "drizzle-orm/sqlite-proxy/migrator";
+import { drizzle } from "drizzle-orm/sqlite-proxy";
+import { DB } from "https://deno.land/x/sqlite@v3.7.0/mod.ts";
+
+// Connect to SQLite database
+const sqlite = new DB("sqlite.db");
+const db = drizzle(sqlite);
+
+// Apply migrations
+console.log("Running migrations...");
+await migrate(db, { migrationsFolder: "./drizzle" });
+console.log("Migrations completed!");
+```
+
+```bash copy filename="Terminal"
+# Generate migrations using Drizzle Kit
+deno run -A npm:drizzle-kit generate
+
+# Apply migrations using your script
+deno run -A apply-migrations.ts
+```
+</Section>
+
+<Callout type="info">
+When running Deno scripts, make sure to include the necessary permissions:
+- `--allow-read` (or `-r`) for file access
+- `--allow-write` (or `-w`) for writing to files (migrations, SQLite database)
+- `--allow-net` (or `-n`) for network access (PostgreSQL, MySQL)
+- `--allow-env` (or `-e`) for environment variables
+
+You can use `-A` for all permissions, but it's better to be more specific in production.
+</Callout>
+
+#### What's next?
+
+<WhatsNextPostgres/>

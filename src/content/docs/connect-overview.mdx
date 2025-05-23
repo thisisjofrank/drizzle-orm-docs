@@ -104,13 +104,20 @@ const db = drizzle({ connection: env.DB });
 ```
 </CodeTabs>
 
-And yes, we do support runtime specific drivers like [Bun SQLite](/docs/connect-bun-sqlite) or [Expo SQLite](/docs/connect-expo-sqlite):
+And yes, we do support runtime specific drivers like [Bun SQLite](/docs/connect-bun-sqlite), [Deno](/docs/connect-deno) or [Expo SQLite](/docs/connect-expo-sqlite):
 <Section>
 ```ts
 import { drizzle } from "drizzle-orm/bun-sqlite"
 
 const db = drizzle(); // <--- will create an in-memory db
 const db = drizzle("./sqlite.db");
+```
+```ts
+import { drizzle } from "drizzle-orm/sqlite-proxy";
+import { DB } from "https://deno.land/x/sqlite@v3.7.0/mod.ts";
+
+const sqlite = new DB("sqlite.db");
+const db = drizzle(sqlite);
 ```
 ```ts
 import { drizzle } from "drizzle-orm/expo-sqlite";
@@ -163,6 +170,7 @@ Feel free to check out per-driver documentations
       ["Turso", "/docs/connect-turso"], 
       ["Cloudflare D1", "/docs/connect-cloudflare-d1"],
       ["Bun SQLite", "/docs/connect-bun-sqlite"],
+      ["Deno SQLite", "/docs/connect-deno-sqlite"],
     ]}
   />
   <LinksList 
@@ -176,7 +184,8 @@ Feel free to check out per-driver documentations
   <LinksList 
   title='Others'
   links={[
-      ["Drizzle Proxy", "/docs/connect-drizzle-proxy"], 
+      ["Drizzle Proxy", "/docs/connect-drizzle-proxy"],
+      ["Deno Postgres", "/docs/connect-deno-postgres"],
     ]}
   />
 </Flex>
